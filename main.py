@@ -6,9 +6,9 @@ from datetime import datetime
 from telebot import types
 
 # --- SOZLAMALAR ---
-TOKEN = "7654410573:AAHhzDMye92WMdqXlkfYjScTgkfEMaOvUiM" 
+TOKEN = "8639157744:AAEXbAI3-7GWvfgQVzFbCtc_MmBOH5EfNRI" 
 bot = telebot.TeleBot(TOKEN)
-OWNER_ID = 7693012837  
+OWNER_ID =6385063814
 
 # --- MA'LUMOTLAR BAZASI ---
 def init_db():
@@ -178,4 +178,5 @@ def main_filter(m):
 if __name__ == "__main__":
     bot.remove_webhook()
     print("Bot barcha imkoniyatlar bilan ishga tushdi...")
+
     bot.infinity_polling(skip_pending=True)
