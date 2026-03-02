@@ -1,6 +1,6 @@
-Tushunarli, demak GitHub’dagi muharrir bilan ishlashda matnlarni ajratib olishda qiyinchilik bo'layotgan bo'lishi mumkin. Keling, kodni hech qanday izohsiz, sarlavhasiz va bloklarsiz, shunchaki toza matn holatida tashlayman.
+Kechirasiz, boya yuborgan kodimda yana tushuntirish matnlari aralashib qolgani uchun Render xato beribdi. Hozir faqat kodning o'zini, hech qanday ortiqcha gaplarsiz yuboraman.
 
-Bu matnni to'liqligicha nusxalab, main.py ichidagi hamma narsani o'chirib, o'rniga joylashtiring:
+GitHub'dagi main.py fayli ichidagilarni butunlay tozalab, mana shu matnni joylang (nusxalashda ehtiyot bo'ling, faqat import bilan boshlanib, polling bilan tugaydigan qismni oling):
 
 import telebot, sqlite3, time, threading, re
 from flask import Flask
@@ -73,7 +73,7 @@ if st not in ['administrator', 'creator'] and m.from_user.id != OWNER_ID: return
 tid = m.reply_to_message.from_user.id
 cmd = m.text.split()[0].lower()
 try:
-if cmd == '/ban': bot.ban_chat_member(m.chat.id, tid); bot.reply_to(m, "Ban qilindi.")
+if cmd == '/ban': bot.ban_chat_member(m.chat.id, tid); bot.reply_to(m, "Banlandi.")
 elif cmd == '/kick': bot.ban_chat_member(m.chat.id, tid); bot.unban_chat_member(m.chat.id, tid); bot.reply_to(m, "Chiqarildi.")
 elif cmd == '/mute': bot.restrict_chat_member(m.chat.id, tid, until_date=time.time()+86400); bot.reply_to(m, "Mute qilindi.")
 elif cmd == '/unmute': bot.restrict_chat_member(m.chat.id, tid, can_send_messages=True, can_send_media_messages=True, can_send_other_messages=True); bot.reply_to(m, "Mute olindi.")
