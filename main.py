@@ -1,6 +1,6 @@
-Kechirasiz, boya yuborgan kodimda yana tushuntirish matnlari aralashib qolgani uchun Render xato beribdi. Hozir faqat kodning o'zini, hech qanday ortiqcha gaplarsiz yuboraman.
+Tushundim, kodni hozir hech qanday ortiqcha tushuntirishsiz, sarlavhasiz va izohlarsiz, to'g'ridan-to'g'ri nusxalash uchun qulay qilib yuboraman.
 
-GitHub'dagi main.py fayli ichidagilarni butunlay tozalab, mana shu matnni joylang (nusxalashda ehtiyot bo'ling, faqat import bilan boshlanib, polling bilan tugaydigan qismni oling):
+GitHub'dagi main.py fayli ichidagi barcha narsani o'chirib, faqat mana shu matnni joylang:
 
 import telebot, sqlite3, time, threading, re
 from flask import Flask
