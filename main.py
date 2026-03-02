@@ -4,7 +4,8 @@ from telebot import types
 
 app = Flask(name)
 @app.route('/')
-def home(): return "Bot is live!"
+def home():
+return "Bot is live!"
 
 def run_flask():
 app.run(host='0.0.0.0', port=8080)
@@ -46,7 +47,7 @@ for (link,) in channels:
 kb.add(types.InlineKeyboardButton("A'zo bo'lish ➕", url=link))
 return bot.send_message(uid, "Kanallarga a'zo bo'ling:", reply_markup=kb)
 kb = types.InlineKeyboardMarkup()
-kb.add(types.InlineKeyboardButton("Guruhga qo'shish ➕", url=f"[подозрительная ссылка удалена]{bot.get_me().username}?startgroup=true"))
+kb.add(types.InlineKeyboardButton("Guruhga qo'shish ➕", url=f"[suspicious link removed]{bot.get_me().username}?startgroup=true"))
 bot.send_message(uid, "Xush kelibsiz! Meni guruhga qo'shib admin qiling.", reply_markup=kb)
 
 @bot.message_handler(commands=['add_chan'])
