@@ -2,13 +2,26 @@ import telebot
 import sqlite3
 import re
 import time
+import threading
+from flask import Flask
 from datetime import datetime
 from telebot import types
+
+# --- FLASK SERVER (Render uchun) ---
+app = Flask(__name__)
+
+@app.route('/')
+def home():
+    return "Bot is running!"
+
+def run_flask():
+    # Render portni avtomatik beradi, bo'lmasa 8080 ishlatiladi
+    app.run(host='0.0.0.0', port=8080)
 
 # --- SOZLAMALAR ---
 TOKEN = "8639157744:AAEXbAI3-7GWvfgQVzFbCtc_MmBOH5EfNRI" 
 bot = telebot.TeleBot(TOKEN)
-OWNER_ID =6385063814
+OWNER_ID = 6385063814
 
 # --- MA'LUMOTLAR BAZASI ---
 def init_db():
@@ -51,7 +64,7 @@ def broadcast(m):
     if not is_bot_admin(m.from_user.id): return
     msg_text = m.text.replace('/send ', '')
     if not msg_text or '/send' in msg_text:
-        return bot.reply_to(m, "Xabar yozing: `/send Matn`")
+        return bot.reply_to(m, "Xabar yozing: `/send Matn` status")
     
     conn = get_db(); users = conn.execute('SELECT user_id FROM users').fetchall(); conn.close()
     count = 0
@@ -68,19 +81,23 @@ def broadcast(m):
 def handle_new_member(m):
     for user in m.new_chat_members:
         if user.is_bot: continue
-        bot.restrict_chat_member(m.chat.id, user.id, can_send_messages=False)
-        kb = types.InlineKeyboardMarkup()
-        kb.add(types.InlineKeyboardButton("✅ Men robot emasman", callback_data=f"v_{user.id}"))
-        bot.send_message(m.chat.id, f"Xush kelibsiz {get_mention(user)}!\nGuruhga yozish uchun tugmani bosing:", reply_markup=kb, parse_mode="Markdown")
+        try:
+            bot.restrict_chat_member(m.chat.id, user.id, can_send_messages=False)
+            kb = types.InlineKeyboardMarkup()
+            kb.add(types.InlineKeyboardButton("✅ Men robot emasman", callback_data=f"v_{user.id}"))
+            bot.send_message(m.chat.id, f"Xush kelibsiz {get_mention(user)}!\nGuruhga yozish uchun tugmani bosing:", reply_markup=kb, parse_mode="Markdown")
+        except: pass
 
 @bot.callback_query_handler(func=lambda call: call.data.startswith('v_'))
 def verify(call):
     uid = int(call.data.split('_')[1])
     if call.from_user.id != uid:
         return bot.answer_callback_query(call.id, "Bu tugma siz uchun emas!")
-    bot.restrict_chat_member(call.message.chat.id, uid, can_send_messages=True, can_send_media_messages=True, can_send_other_messages=True)
-    bot.delete_message(call.message.chat.id, call.message.message_id)
-    bot.answer_callback_query(call.id, "Siz tasdiqlandingiz!")
+    try:
+        bot.restrict_chat_member(call.message.chat.id, uid, can_send_messages=True, can_send_media_messages=True, can_send_other_messages=True)
+        bot.delete_message(call.message.chat.id, call.message.message_id)
+        bot.answer_callback_query(call.id, "Siz tasdiqlandingiz!")
+    except: pass
 
 # --- ADMIN BUYRUQLARI ---
 @bot.message_handler(commands=['admin'])
@@ -107,15 +124,17 @@ def punishment(m):
     if not is_bot_admin(m.from_user.id) or not m.reply_to_message: return
     cmd = m.text.split()[0][1:]
     target = m.reply_to_message.from_user
-    if cmd == 'mute':
-        bot.restrict_chat_member(m.chat.id, target.id, until_date=int(time.time())+900)
-        bot.reply_to(m, f"🔇 {get_mention(target)} 15 daqiqa mute.")
-    elif cmd == 'ban':
-        bot.ban_chat_member(m.chat.id, target.id)
-        bot.reply_to(m, f"🚫 {get_mention(target)} haydaldi.")
-    elif cmd == 'unwarn':
-        conn = get_db(); conn.execute('UPDATE warns SET count = 0 WHERE user_id = ?', (target.id,)); conn.commit(); conn.close()
-        bot.reply_to(m, "✅ Ogohlantirishlar tozalandi.")
+    try:
+        if cmd == 'mute':
+            bot.restrict_chat_member(m.chat.id, target.id, until_date=int(time.time())+900)
+            bot.reply_to(m, f"🔇 {get_mention(target)} 15 daqiqa mute.")
+        elif cmd == 'ban':
+            bot.ban_chat_member(m.chat.id, target.id)
+            bot.reply_to(m, f"🚫 {get_mention(target)} haydaldi.")
+        elif cmd == 'unwarn':
+            conn = get_db(); conn.execute('UPDATE warns SET count = 0 WHERE user_id = ?', (target.id,)); conn.commit(); conn.close()
+            bot.reply_to(m, "✅ Ogohlantirishlar tozalandi.")
+    except: pass
 
 # --- ASOSIY FILTR VA NIGHT MODE ---
 @bot.message_handler(func=lambda m: True, content_types=['text', 'photo', 'video', 'document'])
@@ -135,7 +154,6 @@ def main_filter(m):
 
     # Guruh nazorati
     if m.chat.type in ['group', 'supergroup']:
-        # Adminlarni tekshirmaslik
         try:
             if bot.get_chat_member(cid, uid).status in ['administrator', 'creator']: return
         except: pass
@@ -156,27 +174,29 @@ def main_filter(m):
         is_arab = re.search(r'[\u0600-\u06FF]', text)
 
         if is_bad or is_link or is_arab:
-            try: bot.delete_message(cid, m.message_id)
-            except: pass
-            
-            conn = get_db(); cursor = conn.cursor()
-            cursor.execute('INSERT OR IGNORE INTO warns VALUES (?, 0)', (uid,))
-            cursor.execute('UPDATE warns SET count = count + 1 WHERE user_id = ?', (uid,))
-            count = cursor.execute('SELECT count FROM warns WHERE user_id = ?', (uid,)).fetchone()[0]
-            conn.commit(); conn.close()
+            try: 
+                bot.delete_message(cid, m.message_id)
+                conn = get_db(); cursor = conn.cursor()
+                cursor.execute('INSERT OR IGNORE INTO warns VALUES (?, 0)', (uid,))
+                cursor.execute('UPDATE warns SET count = count + 1 WHERE user_id = ?', (uid,))
+                count = cursor.execute('SELECT count FROM warns WHERE user_id = ?', (uid,)).fetchone()[0]
+                conn.commit(); conn.close()
 
-            if count == 3:
-                bot.restrict_chat_member(cid, uid, until_date=int(time.time())+900)
-                bot.send_message(cid, f"🔇 {get_mention(m.from_user)} 15 daqiqa mute (3/5)!")
-            elif count >= 5:
-                bot.ban_chat_member(cid, uid)
-                bot.send_message(cid, f"🚫 {get_mention(m.from_user)} BAN (5/5)!")
-            else:
-                bot.send_message(cid, f"⚠️ {get_mention(m.from_user)} qoida buzildi! Ogohlantirish: {count}/5")
+                if count == 3:
+                    bot.restrict_chat_member(cid, uid, until_date=int(time.time())+900)
+                    bot.send_message(cid, f"🔇 {get_mention(m.from_user)} 15 daqiqa mute (3/5)!")
+                elif count >= 5:
+                    bot.ban_chat_member(cid, uid)
+                    bot.send_message(cid, f"🚫 {get_mention(m.from_user)} BAN (5/5)!")
+                else:
+                    bot.send_message(cid, f"⚠️ {get_mention(m.from_user)} qoida buzildi! Ogohlantirish: {count}/5")
+            except: pass
 
 # --- ISHGA TUSHIRISH ---
 if __name__ == "__main__":
+    # Flaskni alohida oqimda (thread) ishga tushirish
+    threading.Thread(target=run_flask, daemon=True).start()
+    
     bot.remove_webhook()
     print("Bot barcha imkoniyatlar bilan ishga tushdi...")
-
     bot.infinity_polling(skip_pending=True)
