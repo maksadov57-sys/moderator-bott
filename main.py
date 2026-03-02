@@ -1,5 +1,6 @@
-Ответ Gemini
-Tushundim, mana o'sha "2-qism" degan yozuvsiz, boshidan oxirigacha bitta butun matn holatidagi kod. Buni GitHub'dagi main.py faylingizga to'liqligicha nusxalab oling.
+Tushunarli, demak GitHub’dagi muharrir bilan ishlashda matnlarni ajratib olishda qiyinchilik bo'layotgan bo'lishi mumkin. Keling, kodni hech qanday izohsiz, sarlavhasiz va bloklarsiz, shunchaki toza matn holatida tashlayman.
+
+Bu matnni to'liqligicha nusxalab, main.py ichidagi hamma narsani o'chirib, o'rniga joylashtiring:
 
 import telebot, sqlite3, time, threading, re
 from flask import Flask
@@ -29,6 +30,7 @@ def is_subscribed(user_id):
 conn = sqlite3.connect('moderator.db', check_same_thread=False)
 channels = conn.execute('SELECT id FROM channels').fetchall()
 conn.close()
+if not channels: return True
 for (cid,) in channels:
 try:
 status = bot.get_chat_member(cid, user_id).status
